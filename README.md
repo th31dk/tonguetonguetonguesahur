@@ -2,7 +2,7 @@
     TongueTongueTongueSahur
 </h1>
 <h4 align="center">
-    A Tongue to keep you company during the apocolapse
+    A Tongue to keep you company during the apocalypse
 </h4>
 
 [insert poster here]
