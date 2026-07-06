@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tongue Bot Controller</title>
+<style>
+  :root { color-scheme: dark; }
+  body {
+    font-family: -apple-system, sans-serif;
+    background: #111;
+    color: #eee;
+    margin: 0;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    touch-action: none;
+  }
+  h1 { font-size: 1.2rem; margin: 8px 0; }
+  #status { margin-bottom: 16px; font-size: 0.9rem; color: #999; }
+  #status.connected { color: #4caf50; }
+  button.connect {
+    background: #2979ff; color: white; border: none; border-radius: 8px;
+    padding: 12px 24px; font-size: 1rem; margin-bottom: 20px;
+  }
+  #joystickWrap {
+    width: 240px; height: 240px; border-radius: 50%;
+    background: #222; border: 2px solid #444;
+    position: relative; margin-bottom: 20px;
+  }
+  #joystickKnob {
+    width: 70px; height: 70px; border-radius: 50%;
+    background: #2979ff;
+    position: absolute; top: 85px; left: 85px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  }
+  .axisLabel { font-size: 0.75rem; color: #888; text-align: center; }
+  #bfWrap { width: 260px; margin-bottom: 20px; }
+  #bfWrap label { display: block; margin-bottom: 6px; font-size: 0.9rem; }
+  input[type=range] { width: 100%; }
+  #spinBtn {
+    width: 260px; padding: 16px; font-size: 1.1rem; border-radius: 10px;
+    border: none; background: #ff5252; color: white; margin-bottom: 10px;
+  }
+  #spinBtn.active { background: #ffd740; color: #111; }
+  #liveVals { font-size: 0.8rem; color: #777; font-family: monospace; }
+</style>
+</head>
+<body>
+
+<h1>🐸 Tongue Bot Controller</h1>
+<div id="status">Not connected</div>
+<button class="connect" id="connectBtn">Connect to TongueBot</button>
+
+<div id="joystickWrap">
+  <div id="joystickKnob"></div>
+</div>
+<div class="axisLabel">Left/Right = Pitch &nbsp;&nbsp; Up/Down = Yaw</div>
+
+<div id="bfWrap">
+  <label>Back / Forth</label>
+  <input type="range" id="bfSlider" min="-100" max="100" value="0">
+</div>
+
+<button id="spinBtn">HOLD TO SPIN 🌀</button>
+
+<div id="liveVals">yaw:0 pitch:0 bf:0 circle:0</div>
+
+<script>
+const SERVICE_UUID = "12345678-1234-1234-1234-1234567890ab";
+const CHARACTERISTIC_UUID = "abcd1234-5678-1234-5678-abcdefabcdef";
+
+let bleDevice, bleCharacteristic;
+let state = { yaw: 0, pitch: 0, bf: 0, circle: 0 };
+let sendTimer = null;
+
+const statusEl = document.getElementById('status');
+const connectBtn = document.getElementById('connectBtn');
+const liveVals = document.getElementById('liveVals');
+
+connectBtn.addEventListener('click', async () => {
+  try {
+    bleDevice = await navigator.bluetooth.requestDevice({
+      filters: [{ services: [SERVICE_UUID] }]
+    });
+    statusEl.textContent = "Connecting...";
+    const server = await bleDevice.gatt.connect();
+    const service = await server.getPrimaryService(SERVICE_UUID);
+    bleCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+
+    statusEl.textContent = "Connected to " + bleDevice.name;
+    statusEl.classList.add('connected');
+
+    bleDevice.addEventListener('gattserverdisconnected', () => {
+      statusEl.textContent = "Disconnected";
+      statusEl.classList.remove('connected');
+    });
+
+    // start periodic sender once connected
+    if (sendTimer) clearInterval(sendTimer);
+    sendTimer = setInterval(sendState, 80);
+  } catch (err) {
+    statusEl.textContent = "Connection failed: " + err;
+  }
+});
+
+async function sendState() {
+  if (!bleCharacteristic) return;
+  const line = `${state.yaw},${state.pitch},${state.bf},${state.circle}\n`;
+  liveVals.textContent = `yaw:${state.yaw} pitch:${state.pitch} bf:${state.bf} circle:${state.circle}`;
+  try {
+    await bleCharacteristic.writeValueWithoutResponse(new TextEncoder().encode(line));
+  } catch (err) {
+    // ignore transient write errors, next tick will retry
+  }
+}
+
+// ---------- Joystick ----------
+const wrap = document.getElementById('joystickWrap');
+const knob = document.getElementById('joystickKnob');
+const RADIUS = 85; // max distance knob can move from center, px
+
+let dragging = false;
+
+function setKnob(dx, dy) {
+  knob.style.left = (85 + dx) + 'px';
+  knob.style.top = (85 + dy) + 'px';
+}
+
+function handleMove(clientX, clientY) {
+  const rect = wrap.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  let dx = clientX - centerX;
+  let dy = clientY - centerY;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist > RADIUS) {
+    dx = (dx / dist) * RADIUS;
+    dy = (dy / dist) * RADIUS;
+  }
+  setKnob(dx, dy);
+  state.pitch = Math.round((dx / RADIUS) * 100);
+  state.yaw = Math.round((dy / RADIUS) * 100); // up = positive yaw
+}
+
+function resetKnob() {
+  setKnob(0, 0);
+  state.yaw = 0;
+  state.pitch = 0;
+}
+
+wrap.addEventListener('pointerdown', (e) => {
+  dragging = true;
+  wrap.setPointerCapture(e.pointerId);
+  handleMove(e.clientX, e.clientY);
+});
+wrap.addEventListener('pointermove', (e) => {
+  if (dragging) handleMove(e.clientX, e.clientY);
+});
+wrap.addEventListener('pointerup', () => { dragging = false; resetKnob(); });
+wrap.addEventListener('pointercancel', () => { dragging = false; resetKnob(); });
+
+// ---------- Back/forth slider ----------
+document.getElementById('bfSlider').addEventListener('input', (e) => {
+  state.bf = parseInt(e.target.value, 10);
+});
+
+// ---------- Spin button (hold to activate) ----------
+const spinBtn = document.getElementById('spinBtn');
+function spinOn() { state.circle = 1; spinBtn.classList.add('active'); }
+function spinOff() { state.circle = 0; spinBtn.classList.remove('active'); }
+spinBtn.addEventListener('pointerdown', spinOn);
+spinBtn.addEventListener('pointerup', spinOff);
+spinBtn.addEventListener('pointercancel', spinOff);
+spinBtn.addEventListener('pointerleave', spinOff);
+</script>
+</body>
+</html>
