@@ -17,7 +17,13 @@ explain ts
 Assembly
 </h2>
 
-[insert full assembly here]
+### Procdure:
+ - sort tongue segments according to width, with larger segments closer to base
+ - thread ziptie through central hole of segments
+ - thread steel fishing line (four in total) through smaller holes and tie to servo
+ - base con rod hinges are made from 3D printing filament
+
+![assembly](images/licker_assembly.png)
 
 ### Hardware
 #### [Bill Of Materials](/BOM)
