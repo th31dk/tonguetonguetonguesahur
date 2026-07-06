@@ -33,5 +33,5 @@ Here's the Demo!
 
 ### Credits
 Thank you to:  
-HACK CLUB FALLOUT
+[RENRAN SUN](https://github.com/sunrenran)
 
