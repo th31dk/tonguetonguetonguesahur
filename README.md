@@ -11,7 +11,7 @@
 About this project
 </h2>
 
-explain ts
+Tongue Tongue Tongue Sahur is a robotic tongue with three degrees of freedom. Three servos control bending and forwards/backwards movement. Performs pre-programmed routines.
 
 <h2 align="center">
 Assembly
