@@ -5,7 +5,7 @@
     A Tongue to keep you company during the apocalypse
 </h4>
 
-[insert poster here]
+![zine](images/licker_zine.jpg)
 
 <h2 align="center">
 About this project
