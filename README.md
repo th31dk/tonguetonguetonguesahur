@@ -25,18 +25,6 @@ Assembly
 
 ![assembly](images/licker_assembly.png)
 
-### Hardware
-#### [Bill Of Materials](/BOM)
-
-### [3D Printed Parts](/List%20Of%203D%20Printed%20Parts.csv)
-3D files can be found [here](/Print%20Files/)
-
-### Wiring Diagram
-
-### Assembly Instructions
-
-Here's the Demo!
-
 ### Credits
 Thank you to:  
 [RENRAN SUN](https://github.com/sunrenran)
