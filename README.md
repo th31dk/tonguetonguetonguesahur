@@ -23,6 +23,8 @@ Assembly
  - thread steel fishing line (four in total) through smaller holes and tie to servo
  - base con rod hinges are made from 3D printing filament
 
+Onshape: https://cad.onshape.com/documents/27a7abe3e6ddd3ee8e0502cb/w/bfb3792e82fe8fd004b505b7
+
 ![assembly](images/licker_assembly.png)
 
 ### Credits
